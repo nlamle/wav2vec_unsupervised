@@ -1,0 +1,37 @@
+# OS Generated Files (Crucial for Mac users)
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+
+# Python & Environment
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.env
+
+# PyTorch & Model Checkpoints
+*.pt
+*.pth
+multirun/
+outputs/
+logs/
+
+# Project Specific Data (Do not commit massive datasets!)
+data_preparation/
+pre-trained/
+lid_model/
+
+# Sub-repositories cloned during setup
+# (Git will get confused if you try to commit nested repositories)
+fairseq_/
+kenlm/
+rVADfast/
+sequence/
+
+# IDE & Editor folders
+.vscode/
+.idea/
+*.swp
