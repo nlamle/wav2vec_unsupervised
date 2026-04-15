@@ -35,3 +35,11 @@ sequence/
 .vscode/
 .idea/
 *.swp
+
+# Dataset & Inference Results
+*.wav
+*.tsv
+*.txt
+*.phn
+test_units.txt
+inference_results/
