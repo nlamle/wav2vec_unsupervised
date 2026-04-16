@@ -1,17 +1,11 @@
-# # #!/bin/bash
+# Script for GAN training in the unsupervised Wav2Vec pipeline.
 
-# # # This script runs the GANS training of  unsupervised wav2vec pipeline
+set -e
+set -o pipefail
 
-# # # Wav2Vec Unsupervised Pipeline Runner
-# # # This script runs the entire fairseq wav2vec unsupervised pipeline
-# # # with checkpointing to allow resuming from any step
+source utils.sh
 
-# # set -e  # Exit on error
-# # set -o pipefail  # Exit if any command in a pipe fails
-
-# # source utils.sh
-
-# # #=========================== GANS training and preparation ==============================
+# GANS training and preparation
 # # train_gans(){
 # #    local step_name="train_gans"
 # #    export FAIRSEQ_ROOT=$FAIRSEQ_ROOT
@@ -131,8 +125,7 @@ train_gans(){
     log "gans training."
     mark_in_progress "$step_name"
    
-   # Note: We removed the +optimizer overrides. 
-   # The values are already set in your w2vu.yaml.
+   
    PREFIX=w2v_unsup_gan_xp fairseq-hydra-train \
     --config-dir "$FAIRSEQ_ROOT/examples/wav2vec/unsupervised/config/gan" \
     --config-name w2vu \

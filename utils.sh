@@ -1,7 +1,6 @@
 #!/bin/bash
 
-# ==================== CONFIGURATION ====================
-# Set these variables according to your environment and needs
+# Environment configuration and project-wide directory definitions.
 
 # Main directories
 #.... directories to add to root.......
@@ -58,7 +57,8 @@ CHECKPOINT_FILE="$CHECKPOINT_DIR/progress.checkpoint"
 log() {
     local message="$1"
     local timestamp=$(date +"%Y-%m-%d %H:%M:%S")
-    echo "[$timestamp] $message" | tee -a "$LOG_DIR/pipeline.log"
+    echo "[$timestamp] $message"
+    echo "[$timestamp] $message" >> "$LOG_DIR/pipeline.log" || true
 }
 
 # Check if a step has been completed
@@ -91,9 +91,11 @@ mark_in_progress() {
     local step="$1"
     # First remove any existing in-progress markers for this step
     if [ -f "$CHECKPOINT_FILE" ]; then
-        sed -i "/^$step:IN_PROGRESS$/d" "$CHECKPOINT_FILE"
+        sed "/^$step:IN_PROGRESS$/d" "$CHECKPOINT_FILE" > "${CHECKPOINT_FILE}.tmp" || true
+        cat "${CHECKPOINT_FILE}.tmp" > "$CHECKPOINT_FILE" || true
+        rm -f "${CHECKPOINT_FILE}.tmp"
     fi
-    echo "$step:IN_PROGRESS" >> "$CHECKPOINT_FILE"
+    echo "$step:IN_PROGRESS" >> "$CHECKPOINT_FILE" || true
     log "Marked step '$step' as in progress"
 }
 

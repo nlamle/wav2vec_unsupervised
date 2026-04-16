@@ -1,13 +1,13 @@
 #!/bin/bash
 
-# This script holds all the functions and libraries needed a successful setup 
-# that ensure a smooth running of the fairseq wav2vec unsupervised pipeline
+# Setup functions and library checks for the Wav2Vec-U pipeline environment.
 
 set -e                       # Exit on error
 set -o pipefail              # Exit if any command in a pipe fails
 set -x                       # Print each command for debugging
 
 # ==================== CONFIGURATION ====================
+export PIP_BREAK_SYSTEM_PACKAGES=1
 # Set these variables according to your environment
 
 # Main directories
@@ -230,9 +230,11 @@ install_fairseq() {
         cd "$FAIRSEQ_ROOT"
     fi
 
-    log "Installing fairseq in editable mode..."
-    pip install --editable ./ \
-        || { log "[ERROR] Failed to install fairseq in editable mode."; exit 1; }
+    log "Installing fairseq..."
+    # Removed --editable mode to prevent MacOS Docker volume 'Errno 35 Resource Deadlock'
+    # when setuptools attempts to write .egg-info metadata into the shared repository file system.
+    pip install ./ \
+        || { log "[ERROR] Failed to install fairseq."; exit 1; }
 
     # Install wav2vec specific requirements if the file exists
     local wav2vec_req_file="$FAIRSEQ_ROOT/examples/wav2vec/requirements.txt"

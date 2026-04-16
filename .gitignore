@@ -1,4 +1,4 @@
-# OS Generated Files (Crucial for Mac users)
+# OS Generated Files
 .DS_Store
 .DS_Store?
 ._*
@@ -10,6 +10,7 @@ __pycache__/
 *.py[cod]
 *$py.class
 venv/
+venv*/
 .env
 
 # PyTorch & Model Checkpoints
@@ -18,14 +19,20 @@ venv/
 multirun/
 outputs/
 logs/
+checkpoints/
 
-# Project Specific Data (Do not commit massive datasets!)
+# Project Specific Data
 data_preparation/
 pre-trained/
 lid_model/
+data/
+inference_results/
 
-# Sub-repositories cloned during setup
-# (Git will get confused if you try to commit nested repositories)
+# Sub-repositories
+# Note: fairseq_ is modified locally and should be committed within its own sub-repo context if needed.
+# If tracking as submodules, they should not be ignored. 
+# However, the user's .gitignore has them ignored currently.
+# To keep it consistent with the user's workflow:
 fairseq_/
 kenlm/
 rVADfast/
@@ -36,10 +43,9 @@ sequence/
 .idea/
 *.swp
 
-# Dataset & Inference Results
+# Dataset & Interference Files
 *.wav
 *.tsv
 *.txt
 *.phn
-test_units.txt
-inference_results/
+*.checkpoint
