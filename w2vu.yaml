@@ -1,0 +1,80 @@
+# @package _group_
+common:
+  fp16: false                 # (Floating Point 16) Whether to use mixed precision testing/training. Saves memory when true.
+  log_format: json            # The format in which to output training logs.
+  log_interval: 100            # How often (in updates/batches) to print training statistics to the terminal.
+  seed: 0                     # The random seed for the run (ensures reproducibility).
+
+checkpoint:
+  save_interval: 2000          # Save a model checkpoint every x updates.
+  # restore_file:             # Commented out to ensure training starts completely from scratch.
+  reset_optimizer: true      # If true, the optimizer's past learning state is thrown out when restoring from a checkpoint.
+  reset_lr_scheduler: true   # If true, resets the learning rate schedule instead of continuing from where the loaded checkpoint paused.
+  save_dir: /root/wav2vec_unsupervised/checkpoints/english_phoneme_run_15k  # The directory folder where new checkpoints will be safely written to disk.
+
+task:
+  _name: unsupervised_speech  # Specifies the fairseq Task plugin that defines how data is loaded, iterated, and evaluated.
+  data: /root/wav2vec_unsupervised/data/clustering/librispeech/precompute_pca512_cls128_mean  # Path to the directory containing preprocessed audio feature embeddings.
+  text_data: /root/wav2vec_unsupervised/data_preparation/text/unlabelled.txt  # Path to the binarized phoneme text for the discriminator.
+  labels: phn                 # Target labels being predicted (phn = phonemes).
+  kenlm_path: ""              # Path to a KenLM n-gram language model (often used during decoding for perplexity evaluation).
+
+dataset:
+  num_workers: 1              # Number of background CPU processes to utilize for loading data batches concurrently.
+  batch_size: 4               # Number of audio files/samples passed to the model in a single training step.
+  valid_subset: valid           # The specific dataset split name (e.g. dev, or valid) used precisely for validation.
+
+criterion:
+  _name: wav2vec_u_criterion  # Identifier for the customized GAN Loss Function (Criterion) used by wav2vec-Unsupervised.
+
+optimization:
+  max_update: 15000           # Total maximum number of parameter updates before training is forcefully stopped.
+  update_freq: [8]            # Gradient accumulation: accumulate gradients over 8 steps before updating weights (simulates batch size of 32).
+  lr: [0]                     # Base fallback learning rate (often left as 0 when specialized group learning rates are defined).
+
+optimizer:
+  _name: composite            # Utilizing "composite" telling Fairseq that different components (Generator vs Discriminator) will have different optimizers.
+  dynamic_groups: false       # Static parameter groups based strictly on the layer names rather than evaluated structurally.
+  groups:
+    default:                  # Tuning parameters that don't match the Generator/Discriminator modules.
+      lr: [0.0001]            # Base learning rate.
+      optimizer:
+        _name: adam           # The optimization algorithm (Adaptive Moment Estimation).
+        lr: [0.0001] 
+        adam_betas: [0.5, 0.98] # Hyperparameters (beta1, beta2) for Adam. Beta1 is 0.5 (Standard stability parameter for GAN models).
+        weight_decay: 0       # L2 Penalization applied to weights. 0 means no decay.
+      lr_scheduler:
+        _name: fixed          # The learning rate does not decay or ramp over time; it remains entirely static.
+        warmup_updates: 0     # Number of updates to progressively scale learning rate from 0 up to 0.0001.
+    generator:                # Learning controls for the Generator (The wav2vec Unsupervised phonetic acoustic model).
+      lr: [0.0001]
+      optimizer:
+        _name: adam
+        lr: [0.0001] 
+        adam_betas: [0.5, 0.98]
+        weight_decay: 0
+      lr_scheduler:
+        _name: fixed
+        warmup_updates: 0
+    discriminator:            # Learning controls for the Discriminator (The critic that judges real phoneme text distributions vs fake ones).
+      lr: [0.0001]
+      optimizer:
+        _name: adam
+        lr: [0.0001]
+        adam_betas: [0.5, 0.98]
+        weight_decay: 0.0001  # Discriminator implements a tiny 0.0001 weight decay to prevent overfitting securely.
+      lr_scheduler:
+        _name: fixed
+        warmup_updates: 0
+
+lr_scheduler:
+  _name: fixed                # The global fallback learning rate scheduler (if not covered by groups).
+  warmup_updates: 0
+
+model:
+  _name: wav2vec_u            # Specifies the specific fairseq neural architecture plugin (the Wav2Vec-Unsupervised GAN model).
+  input_dim: 512              # Expects that the generated audio input vectors each individually have 512 dimensions.
+  smoothness_weight: 0.5      # Loss coefficient forcing adjacent audio frames to output similar consecutive phoneme distributions.
+  gradient_penalty: 1.5       # WGAN Gradient Penalty coefficient applied to the Discriminator to enforce Lipschitz continuity & stability.
+  code_penalty: 6.0           # Entropy maximization coefficient encouraging the Generator to utilize a diverse array of diverse phonemes.
+  temp: "2.0,0.5,0.99"        # Schedule for the Gumbel-Softmax temperature: 'start_temp, end_temp, decay_factor'. Sharpens probabilities over time.
